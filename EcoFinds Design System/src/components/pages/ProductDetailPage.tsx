@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { ArrowLeft, Heart, Share, ShoppingCart, Leaf, Shield, Star, MapPin, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Card, CardContent } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Separator } from '../ui/separator';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import type { Product } from '../../App';
+import { Textarea } from '../ui/textarea';
+import { ProductCard } from '../ProductCard';
+import type { Product, Review } from '../../App';
 
 interface ProductDetailPageProps {
   product: Product;
@@ -13,9 +15,48 @@ interface ProductDetailPageProps {
   onBack: () => void;
 }
 
+// Mock related products (in a real app, this would come from props or API)
+const mockRelatedProducts: Product[] = [
+  {
+    id: "related1",
+    title: "Designer Wool Coat",
+    price: 120,
+    originalPrice: 200,
+    condition: "Excellent",
+    category: "Fashion",
+    description: "Luxury wool coat in perfect condition",
+    images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
+    seller: { id: "s1", name: "Fashion Store", verified: true, rating: 4.7 },
+    location: "NYC",
+    co2Saved: 3.2,
+    createdAt: new Date(),
+    stock: "In Stock",
+    reviews: []
+  },
+  {
+    id: "related2", 
+    title: "Vintage Denim Jacket",
+    price: 65,
+    originalPrice: 95,
+    condition: "Good",
+    category: "Fashion",
+    description: "Classic denim jacket with character",
+    images: ["https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400"],
+    seller: { id: "s2", name: "Vintage Shop", verified: true, rating: 4.5 },
+    location: "LA",
+    co2Saved: 2.1,
+    createdAt: new Date(),
+    stock: "Low Stock",
+    reviews: []
+  }
+];
+
 export function ProductDetailPage({ product, onAddToCart, onBack }: ProductDetailPageProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(product.saved || false);
+  const [userRating, setUserRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [relatedProductIndex, setRelatedProductIndex] = useState(0);
 
   const savings = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
 
@@ -34,16 +75,37 @@ export function ProductDetailPage({ product, onAddToCart, onBack }: ProductDetai
     }).format(date);
   };
 
+  const handleStarClick = (rating: number) => {
+    setUserRating(rating);
+  };
+
+  const handleSubmitReview = () => {
+    if (userRating > 0 && reviewComment.trim()) {
+      // In a real app, this would submit to an API
+      console.log("Review submitted:", { rating: userRating, comment: reviewComment });
+      setUserRating(0);
+      setReviewComment("");
+    }
+  };
+
+  const navigateRelatedProducts = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setRelatedProductIndex(prev => prev > 0 ? prev - 1 : mockRelatedProducts.length - 1);
+    } else {
+      setRelatedProductIndex(prev => prev < mockRelatedProducts.length - 1 ? prev + 1 : 0);
+    }
+  };
+
   return (
-    <div className="pb-24 bg-white">
+    <div className="pb-24 lg:pb-0 bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-white border-b border-stone-200">
+      <div className="flex items-center justify-between p-4 bg-background border-b border-border">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={toggleSave}>
-            <Heart className={`w-5 h-5 ${isSaved ? 'text-red-500 fill-red-500' : 'text-stone-500'}`} />
+            <Heart className={`w-5 h-5 ${isSaved ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
           </Button>
           <Button variant="ghost" size="sm">
             <Share className="w-5 h-5" />
@@ -53,11 +115,11 @@ export function ProductDetailPage({ product, onAddToCart, onBack }: ProductDetai
 
       {/* Image Carousel */}
       <div className="relative">
-        <div className="aspect-square bg-stone-100 overflow-hidden">
+        <div className="w-full h-72 sm:h-96 lg:h-[32rem] bg-stone-100 overflow-hidden flex items-center justify-center">
           <img
             src={product.images[currentImageIndex]}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-auto h-full max-h-full object-contain"
           />
         </div>
         
@@ -196,11 +258,129 @@ export function ProductDetailPage({ product, onAddToCart, onBack }: ProductDetai
               </Button>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Reviews Section */}
+          <div>
+            <h3 className="font-semibold text-stone-800 mb-4">Reviews & Ratings</h3>
+            
+            {/* Add Review Form */}
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="text-lg">Leave a Review</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Star Rating */}
+                <div>
+                  <p className="text-sm text-stone-600 mb-2">Rate this product:</p>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <button
+                        key={rating}
+                        onClick={() => handleStarClick(rating)}
+                        className="transition-colors"
+                      >
+                        <Star 
+                          className={`w-6 h-6 ${
+                            rating <= userRating 
+                              ? 'text-yellow-500 fill-yellow-500' 
+                              : 'text-stone-300'
+                          }`} 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Comment */}
+                <div>
+                  <p className="text-sm text-stone-600 mb-2">Your review:</p>
+                  <Textarea
+                    placeholder="Share your experience with this product..."
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleSubmitReview}
+                  disabled={userRating === 0 || !reviewComment.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Submit Review
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Existing Reviews */}
+            <div className="space-y-4">
+              {product.reviews && product.reviews.length > 0 ? (
+                product.reviews.map((review) => (
+                  <Card key={review.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="bg-stone-100 text-stone-700 text-sm">
+                            {review.userName.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-stone-800">{review.userName}</h4>
+                            <div className="flex">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < review.rating
+                                      ? 'text-yellow-500 fill-yellow-500'
+                                      : 'text-stone-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-stone-500">
+                              {formatDate(review.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-stone-600 text-sm">{review.comment}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-stone-500 text-center py-4">No reviews yet. Be the first to review!</p>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Related Products */}
+          <div>
+            <h3 className="font-semibold text-stone-800 mb-4">Related Products</h3>
+            <div className="relative">
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {mockRelatedProducts.map((relatedProduct) => (
+                  <div key={relatedProduct.id} className="flex-shrink-0 w-48">
+                    <ProductCard
+                      product={relatedProduct}
+                      onProductClick={() => {}} // Would navigate to that product
+                      onAddToCart={onAddToCart}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Fixed Add to Cart Button */}
-      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4">
+      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4 lg:bottom-4">
         <Button
           onClick={handleAddToCart}
           className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 text-lg font-semibold shadow-lg"
