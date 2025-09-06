@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EcoFinds</string>
+    <string name="title_activity_main">EcoFinds</string>
+    <string name="package_name">com.ecofinds.app</string>
+    <string name="custom_url_scheme">com.ecofinds.app</string>
+</resources>
